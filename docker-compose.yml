@@ -1,0 +1,19 @@
+services:
+  comfyui:
+#    user: 1000:1000
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - "./custom_nodes:/app/custom_nodes"
+      - "./models:/app/models"
+      - "./outputs:/app/output"
+      - "./user:/app/user"
+
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [ gpu ]
