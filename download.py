@@ -21,18 +21,19 @@ def recursive_download(url):
 			path = Path(item['path'])
 
 			if item['type'] == 'file':
-				download_url = item['download_url']
-				print(f'Downloading file {path}: {download_url}')
+				if not path.is_file():
+					download_url = item['download_url']
+					print(f'Downloading file {path}: {download_url}')
 
-				file_dl = requests.get(download_url)
-				if file_dl.status_code == 200:
-					with open(path, 'wb') as file:
-						file.write(file_dl.content)
-				else:
-					raise requests.exceptions.RequestException(f'Request failed with status code {query.status_code}\n{query.json()}')
+					file_dl = requests.get(download_url)
+					if file_dl.status_code == 200:
+						with open(path, 'wb') as file:
+							file.write(file_dl.content)
+					else:
+						raise requests.exceptions.RequestException(f'Request failed with status code {query.status_code}\n{query.json()}')
 
 			else:
-				print(f'Creating folder "{path}"')
+				print(f'folder "{path}"')
 				path.mkdir(parents=True, exist_ok=True)
 				recursive_download(item['_links']['self'])
 

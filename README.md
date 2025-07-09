@@ -1,57 +1,83 @@
 # comfyui-docker
-A simple docker image for ComfyUI. The objective was to distill it to the (almost) minimum required to run.
+This repository provides a Dockerfile and docker-compose.yml configuration to quickly set up and run ComfyUI in a containerized environment. 
+It comes pre-configured for GPU support with NVIDIA hardware, although it can be adapted for AMD or Intel GPUs.
 
-It is also provided with a docker-compose file for simpler commands
+## Overview
 
-Please refer to comfyui docs for additional information on the tool itself: https://docs.comfy.org/
+ComfyUI is a modular, flexible user interface for machine learning models. 
+This Dockerized version allows you to run ComfyUI with ease while handling dependencies and GPU support.
 
-The docker image also contains ffmpeg and opencv which are not natively required by comfyui, as they are used in several custom nodes. 
+## Features
 
-The container can be accessed from the url http://localhost:8188
+- Dockerized Environment: Easily deploy ComfyUI with all necessary dependencies.
+- GPU Support: Default setup for NVIDIA GPUs, with options for AMD/Intel GPUs.
+- Persistent Volumes: Mounts for models, outputs, and custom nodes to ensure persistent data.
+
+
+## Prerequisites
+
+Before you begin, ensure you have these dependencies installed:
+- Docker
+- Docker Compose 
+- Nvidia container toolkit or equivalent for your system. Note: may come bundled with docker-desktop
+
+If lacking any of these, please refer to each documentation on how to install on your system
+
 
 ## Getting started
 
-### Building the image
+1. Clone the repository
+```shell
+git clone https://github.com/charlesgiry/comfyui-docker.git 
+cd comfyui-docker
+```
 
+2. Build the Docker Image
 ```shell
 docker compose build
 ```
 
-### Starting the container
+3. Start the container
 
-#### Attached mode:
+Attached mode (will display logs in the terminal):
 ```shell
 docker compose up
 ```
-Note: you will need to press Ctrl+C to stop the container
+Press `Ctrl + C` to stop the container.
 
-#### Detached mode:
+
+Detached mode:
 ```shell
 docker compose up -d
 ```
-The container will run in detached mode (in the background). To stop it, you will have to use another command
+To stop the container:
 ```shell
 docker compose down
 ```
 
-### Setting up the models folder
+4. Access comfyui and start using it: http://localhost:8188
 
-The `models` folder structure contains specific folders and files required by ComfyUI. 
-Some of them needs to be downloaded from the internet (like model checkpoints etc) 
-and some other are in the [ComfyUI repository](https://github.com/comfyanonymous/ComfyUI) like the content of the `models/configs` folder.
+## Setting up the "models" folder
 
-A python script has been provided to create the folder structure and download the files: `download.py`.
-You can either run it directly within your OS if you want (it requires the `requests` library) or run it within the docker container:
+ComfyUI requires a specific folder structure under models, with files such as `checkpoints` and `configs`. 
+To quickly set this up, you can use the provided Python script `download.py`.
+
+### Running the script:
+- You can run the script on your local machine if you have Python and the requests library installed.
+- Alternatively, you can run the script directly inside the container.
 ```shell
 docker compose exec comfyui python3 download.py
 ```
+This will download the necessary model files directly from the [ComfyUI GitHub repository](https://github.com/comfyanonymous/ComfyUI) using the Github API.
 
-## Running this image with a non Nvidia GPU
-As I only own a NVIDIA GPU, I built this image with this it mind, but you should be able to modify the Dockerfile to make an image working with an AMD or Intel GPU:
+Note: if you are rate-limited by the API, you can also clone the project and keep only the "models" folder.
+
+## GPU Support
+As I only own a NVIDIA GPU, I built this image with this it mind. 
+You should be able to slightly modify the project to make an image working with an AMD or Intel GPU
 
 You will need to modify this line inside the `Dockerfile`:
 ```dockerfile
-# Install pytorch for Nvidia GPU
 RUN pip3 install --no-cache-dir --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu129
 ```
 
@@ -65,7 +91,6 @@ You will also need to modify the `docker-compose.yml` file:
               count: all
               capabilities: [ gpu ]
 ```
-
 
 ### AMD GPUs
 This documentation may be out of date by the time you download it, so you should refer to https://pytorch.org/get-started/locally/ (Linux OS, with pip package)
@@ -96,3 +121,11 @@ sed -i 's/https:\/\/download.pytorch.org\/whl\/nightly\/cu129/https:\/\/download
 ```
 
 You will also need to edit the `docker-compose.yml` file, but this may depend more closely on your system
+
+
+## Additional resources
+For more information about ComfyUI itself, refer to the official documentation:
+- https://docs.comfy.org/
+
+There is a thriving community around ComfyUI, you may also want to engage with it, for example on reddit:
+- https://www.reddit.com/r/comfyui/
