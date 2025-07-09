@@ -9,6 +9,43 @@ The docker image also contains ffmpeg and opencv which are not natively required
 
 The container can be accessed from the url http://localhost:8188
 
+## Getting started
+
+### Building the image
+
+```shell
+docker compose build
+```
+
+### Starting the container
+
+#### Attached mode:
+```shell
+docker compose up
+```
+Note: you will need to press Ctrl+C to stop the container
+
+#### Detached mode:
+```shell
+docker compose up -d
+```
+The container will run in detached mode (in the background). To stop it, you will have to use another command
+```shell
+docker compose down
+```
+
+### Setting up the models folder
+
+The `models` folder structure contains specific folders and files required by ComfyUI. 
+Some of them needs to be downloaded from the internet (like model checkpoints etc) 
+and some other are in the [ComfyUI repository](https://github.com/comfyanonymous/ComfyUI) like the content of the `models/configs` folder.
+
+A python script has been provided to create the folder structure and download the files: `download.py`.
+You can either run it directly within your OS if you want (it requires the `requests` library) or run it within the docker container:
+```shell
+docker compose exec comfyui python3 download.py
+```
+
 ## Running this image with a non Nvidia GPU
 As I only own a NVIDIA GPU, I built this image with this it mind, but you should be able to modify the Dockerfile to make an image working with an AMD or Intel GPU:
 
@@ -39,7 +76,7 @@ At the time of writing, you will need to set the value in the `dockerfile` to:
 RUN pip3 install --no-cache-dir --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/rocm6.4
 ```
 - Sed command to automatically edit the relevant line:
-```
+```shell
 sed -i 's/https:\/\/download.pytorch.org\/whl\/nightly\/cu129/https:\/\/download.pytorch.org\/whl\/nightly\/rocm6.4/g' Dockerfile
 ```
 
@@ -54,7 +91,7 @@ At the time of writing, you will need to set the value in the `dockerfile` to:
 RUN pip3 install --no-cache-dir --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/xpu
 ```
 - Sed command to automatically edit the relevant line:
-```
+```shell
 sed -i 's/https:\/\/download.pytorch.org\/whl\/nightly\/cu129/https:\/\/download.pytorch.org\/whl\/nightly\/xpu/g' Dockerfile
 ```
 

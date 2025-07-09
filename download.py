@@ -7,9 +7,10 @@ from pathlib import Path
 
 def recursive_download(url):
 	"""
-
-	:param url:
-	:return:
+	Crawls the github api url
+	Recursively explores all the folders within, and download all the files at correct paths
+	:param url: github api url. ex: https://api.github.com/repos/comfyanonymous/ComfyUI/contents/models
+	:raises: requests.exceptions.RequestException: There was an error while accessing the api (ex: rate limit exceeded)
 	"""
 	print(f'Recursive download: {url}')
 	query = requests.get(url)
@@ -21,22 +22,23 @@ def recursive_download(url):
 
 			if item['type'] == 'file':
 				download_url = item['download_url']
-				print(f'File download: {download_url}')
-				dl = requests.get(download_url)
-				if dl.status_code == 200:
+				print(f'Downloading file {path}: {download_url}')
+
+				file_dl = requests.get(download_url)
+				if file_dl.status_code == 200:
 					with open(path, 'wb') as file:
-						file.write(dl.content)
+						file.write(file_dl.content)
 				else:
-					print(f'Request "{download_url}" failed with status code {query.status_code}')
-					print(query.json())
+					raise requests.exceptions.RequestException(f'Request failed with status code {query.status_code}\n{query.json()}')
 
 			else:
+				print(f'Creating folder "{path}"')
 				path.mkdir(parents=True, exist_ok=True)
 				recursive_download(item['_links']['self'])
 
-
 	else:
-		print(f'Request "{url}" failed with status code {query.status_code}')
-		print(query.json())
+		raise requests.exceptions.RequestException(f'Request failed with status code {query.status_code}\n{query.json()}')
 
-recursive_download('https://api.github.com/repos/comfyanonymous/ComfyUI/contents/models')
+
+if __name__ == '__main__':
+	recursive_download('https://api.github.com/repos/comfyanonymous/ComfyUI/contents/models')

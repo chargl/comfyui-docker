@@ -28,6 +28,8 @@ RUN pip3 install --no-cache-dir --pre torch torchvision torchaudio --index-url h
 RUN git clone --depth 1 https://github.com/comfyanonymous/ComfyUI.git . && \
     pip3 install --no-cache-dir -r requirements.txt
 
+COPY download.py .
+
 EXPOSE 8188
 
 ENTRYPOINT ["python3", "main.py", "--listen"]
