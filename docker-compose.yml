@@ -3,7 +3,7 @@ services:
     build: .
     image: cgl/comfyui
     ports:
-      - "8080:8080"
+      - "8188:8188"
     volumes:
       - "./custom_nodes:/app/custom_nodes"
       - "./models:/app/models"

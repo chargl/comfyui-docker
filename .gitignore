@@ -1,1 +1,5 @@
 .idea
+user/*
+outputs/*
+models/*
+custom_nodes/*

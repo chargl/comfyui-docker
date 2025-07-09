@@ -25,7 +25,9 @@ WORKDIR /app
 RUN pip3 install --no-cache-dir --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu129
 
 # Install ComfyUI
-RUN git clone https://github.com/comfyanonymous/ComfyUI.git . && \
+RUN git clone --depth 1 https://github.com/comfyanonymous/ComfyUI.git . && \
     pip3 install --no-cache-dir -r requirements.txt
 
-ENTRYPOINT ["python3", "main.py", "--port", "8080", "--listen"]
+EXPOSE 8188
+
+ENTRYPOINT ["python3", "main.py", "--listen"]
