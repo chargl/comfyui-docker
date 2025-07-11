@@ -4,7 +4,7 @@ It comes pre-configured for GPU support with NVIDIA hardware, although it can be
 
 ## Overview
 
-ComfyUI is a modular, flexible user interface for machine learning models. 
+ComfyUI is a modular, flexible user interface for media generation. 
 This Dockerized version allows you to run ComfyUI with ease while handling dependencies and GPU support.
 
 ## Features
