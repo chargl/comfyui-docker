@@ -1,6 +1,6 @@
 # comfyui-docker
 This repository provides a Dockerfile and docker-compose.yml configuration to quickly set up and run ComfyUI in a containerized environment. 
-It comes pre-configured for GPU support with NVIDIA hardware, although it can be adapted for AMD or Intel GPUs.
+It comes pre-configured for GPU support with NVIDIA hardware.
 
 ## Overview
 
