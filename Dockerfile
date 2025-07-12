@@ -31,14 +31,15 @@ USER root
 RUN apt-get update && \
     apt-get install --no-install-recommends -y \
         ffmpeg \
-        python3-opencv 
+        python3-opencv && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # # Install additional pip components you may need
 USER ubuntu
 RUN pip3 install --no-cache-dir \
         sageattention \
         gguf
-
 
 EXPOSE 8188
 

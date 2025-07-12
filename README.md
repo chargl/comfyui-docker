@@ -10,8 +10,8 @@ This Dockerized version allows you to run ComfyUI with ease while handling depen
 ## Features
 
 - Dockerized Environment: Easily deploy ComfyUI with all necessary dependencies.
-- GPU Support: Default setup for NVIDIA GPUs, with options for AMD/Intel GPUs.
-- Persistent Volumes: Mounts for models, outputs, and custom nodes to ensure persistent data.
+- GPU Support: Default setup for NVIDIA GPUs.
+- Persistent Volumes: Mounts for models, outputs, custom nodes and user data to ensure persistent data.
 
 
 ## Prerequisites
@@ -62,6 +62,8 @@ docker compose down
 ComfyUI requires a specific folder structure under models, with files such as `checkpoints` and `configs`. 
 To quickly set this up, you can use the provided Python script `download.py`.
 
+You will also need to download the actual models yourself
+
 ### Running the script:
 - You can run the script on your local machine if you have Python and the requests library installed.
 - Alternatively, you can run the script directly inside the container.
@@ -72,55 +74,31 @@ This will download the necessary model files directly from the [ComfyUI GitHub r
 
 Note: if you are rate-limited by the API, you can also clone the project and keep only the "models" folder.
 
-## GPU Support
-As I only own a NVIDIA GPU, I built this image with this it mind. 
-You should be able to slightly modify the project to make an image working with an AMD or Intel GPU
+## Additional requirements depending on custom nodes
 
-You will need to modify this line inside the `Dockerfile`:
+You may need additional installations for custom nodes. Many of them can be done during runtime (ex: using [ComfyUI Manager](https://github.com/Comfy-Org/ComfyUI-Manager))
+You may encounter some custom nodes requiring additional OS or pip packages. That is why an additional step has been added to the Dockerfile after the setup, to be able to leverage docker build cache
+
+Here's the example currently in the Dockerfile:
 ```dockerfile
-RUN pip3 install --no-cache-dir --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu129
+# Install additional apt components you may need
+USER root
+RUN apt-get update && \
+    apt-get install --no-install-recommends -y \
+        ffmpeg \
+        python3-opencv \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# # Install additional pip components you may need
+USER ubuntu
+RUN pip3 install --no-cache-dir \
+        sageattention \
+        gguf
 ```
+In this example, I am adding ffmpeg and opencv for some image detection nodes, as well as installing gguf via pip to allow to run quantized models using [ComfyUI-GGUF](https://github.com/city96/ComfyUI-GGUF) and sageattention for faster inference in certain cases.
 
-You will also need to modify the `docker-compose.yml` file:
-```yaml
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [ gpu ]
-```
-
-### AMD GPUs
-This documentation may be out of date by the time you download it, so you should refer to https://pytorch.org/get-started/locally/ (Linux OS, with pip package)
-
-At the time of writing, you will need to set the value in the `dockerfile` to:
-```dockerfile
-# Install pytorch for AMD GPU
-RUN pip3 install --no-cache-dir --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/rocm6.4
-```
-- Sed command to automatically edit the relevant line:
-```shell
-sed -i 's/https:\/\/download.pytorch.org\/whl\/nightly\/cu129/https:\/\/download.pytorch.org\/whl\/nightly\/rocm6.4/g' Dockerfile
-```
-
-You will also need to edit the `docker-compose.yml` file, but this may depend more closely on your system
-
-### Intel GPUs
-This documentation may be out of date by the time you download it, so you should refer to https://docs.pytorch.org/docs/stable/notes/get_start_xpu.html
-
-At the time of writing, you will need to set the value in the `dockerfile` to:
-```dockerfile
-# Install pytorch for Intel GPU
-RUN pip3 install --no-cache-dir --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/xpu
-```
-- Sed command to automatically edit the relevant line:
-```shell
-sed -i 's/https:\/\/download.pytorch.org\/whl\/nightly\/cu129/https:\/\/download.pytorch.org\/whl\/nightly\/xpu/g' Dockerfile
-```
-
-You will also need to edit the `docker-compose.yml` file, but this may depend more closely on your system
+The docker build cache allows me to skip every step before these, making subsequent builds much faster when I need to update these dependencies
 
 
 ## Additional resources
@@ -129,3 +107,7 @@ For more information about ComfyUI itself, refer to the official documentation:
 
 There is a thriving community around ComfyUI, you may also want to engage with it, for example on reddit:
 - https://www.reddit.com/r/comfyui/
+
+The reference locations for many of the models required by comfyui:
+- https://huggingface.co/
+- https://civitai.com/
