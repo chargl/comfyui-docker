@@ -4,34 +4,41 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     DEBIAN_FRONTEND=noninteractive
 
+    # Install apt prerequisites
 RUN apt-get update && \
     apt-get install --no-install-recommends -y \
         python3.12 \
         python3-pip \
         python3-dev \
         build-essential \
-        git \
-        ffmpeg \
-        python3-opencv && \
+        git && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* && \
     rm -f /usr/lib/python3.12/EXTERNALLY-MANAGED
 
-
+# Install ComfyUI
 USER ubuntu
 ENV PATH="/home/ubuntu/.local/bin:$PATH"
 WORKDIR /app
-
-# Install pytorch for Nvidia GPU
-# RUN pip3 install --no-cache-dir --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu129 && \
-#    pip3 install --no-cache-dir sageattention
-
-# Install ComfyUI
 RUN git clone --depth 1 https://github.com/comfyanonymous/ComfyUI.git . && \
-    pip3 install --no-cache-dir -r requirements.txt && \
-    pip3 install --no-cache-dir sageattention
+    pip3 install --no-cache-dir -r requirements.txt
 
+# Add the small script to regenerate the models folder architecture if needed
 COPY download.py .
+
+# Install additional apt components you may need
+USER root
+RUN apt-get update && \
+    apt-get install --no-install-recommends -y \
+        ffmpeg \
+        python3-opencv 
+
+# # Install additional pip components you may need
+USER ubuntu
+RUN pip3 install --no-cache-dir \
+        sageattention \
+        gguf
+
 
 EXPOSE 8188
 
