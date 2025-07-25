@@ -1,4 +1,3 @@
-FROM nvidia/cuda:12.9.1-cudnn-runtime-ubuntu24.04 AS base
 FROM ubuntu:24.04 AS end-image
 
 # ENV variables
@@ -13,15 +12,14 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 RUN --mount=type=cache,target=/var/cache/apt \
     --mount=type=cache,target=/var/lib/apt/lists \
     apt-get update && \
+    apt-get upgrade -y && \
     apt-get install --no-install-recommends -y \
         python3.12  \
         python3-pip  \
         python3-dev \
-        python3-git \
         build-essential \
-        git && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/* && \
+        git \
+        wget && \
     rm -f /usr/lib/python3.12/EXTERNALLY-MANAGED
 
 # Install pytorch for Nvidia GPU
@@ -39,28 +37,35 @@ RUN --mount=type=cache,target=/home/ubuntu/.cache/pip \
 # Add the provided utility script in the image
 COPY download.py .
 
-# Add cudnn support
-COPY --from=base --chown=ubuntu:ubuntu /usr/local/cuda* /usr/local/cuda*
-COPY --from=base --chown=ubuntu:ubuntu /opt/nvidia /opt/nvidia
-
 # Additional dependencies for custom nodes
+# Add cudnn support
+# Note: current setup adds a huge footprint, a manual install would likely be better
+# FROM nvidia/cuda:12.9.1-cudnn-runtime-ubuntu24.04 AS base
+# FROM end-image
+# COPY --from=base --chown=ubuntu:ubuntu /usr/local/cuda* /usr/local/cuda*
+# COPY --from=base --chown=ubuntu:ubuntu /opt/nvidia /opt/nvidia
+
+# # Add additional OS based packages
 USER root
 RUN --mount=type=cache,target=/var/cache/apt \
     --mount=type=cache,target=/var/lib/apt/lists \
-    apt-get update && \
     apt-get install --no-install-recommends -y \
         ffmpeg \
-        python3-opencv && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+        python3-opencv
 
-
+# Add additional pip based packages
 USER ubuntu
 RUN --mount=type=cache,target=/home/ubuntu/.cache/pip \
     pip3 install \
         gguf \
         sageattention
 
+# Cleanup image
+USER root
+RUN apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+USER ubuntu
 EXPOSE 8188
 
 ENTRYPOINT ["python3", "main.py", "--listen"]
