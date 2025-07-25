@@ -2,6 +2,7 @@ services:
   comfyui:
     build: .
     image: cgl/comfyui
+    command: "--use-sage-attention"
     ports:
       - "8188:8188"
     volumes:
