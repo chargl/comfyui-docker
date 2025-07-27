@@ -1,17 +1,12 @@
-FROM ubuntu:24.04 AS end-image
+FROM ubuntu:24.04
 
 # ENV variables
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    DEBIAN_FRONTEND=noninteractive \
-    PATH=/usr/local/cuda/bin:${PATH} \
-    CUDNN_INCLUDE_DIR=/usr/local/cuda/include \
-    CUDNN_LIB_DIR=/usr/local/cuda/lib64
+    DEBIAN_FRONTEND=noninteractive
 
 # Base dependencies
-RUN --mount=type=cache,target=/var/cache/apt \
-    --mount=type=cache,target=/var/lib/apt/lists \
-    apt-get update && \
+RUN apt-get update && \
     apt-get upgrade -y && \
     apt-get install --no-install-recommends -y \
         python3.12  \
@@ -19,53 +14,48 @@ RUN --mount=type=cache,target=/var/cache/apt \
         python3-dev \
         build-essential \
         git \
-        wget && \
-    rm -f /usr/lib/python3.12/EXTERNALLY-MANAGED
+        curl && \
+    rm -f /usr/lib/python3.12/EXTERNALLY-MANAGED && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # Install pytorch for Nvidia GPU
 USER ubuntu
 ENV PATH="/home/ubuntu/.local/bin:$PATH"
 WORKDIR /app
-RUN --mount=type=cache,target=/home/ubuntu/.cache/pip \
-    pip3 install --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu129
+RUN pip3 install --no-cache-dir --pre torch torchvision torchaudio --index-url https://download.pytorch.org/whl/nightly/cu129
 
 # Install ComfyUI
-RUN --mount=type=cache,target=/home/ubuntu/.cache/pip \
-    git clone --depth 1 https://github.com/comfyanonymous/ComfyUI.git . && \
-    pip3 install -r requirements.txt
+RUN git clone --depth 1 https://github.com/comfyanonymous/ComfyUI.git . && \
+    pip3 install --no-cache-dir -r requirements.txt
 
 # Add the provided utility script in the image
 COPY download.py .
 
 # Additional dependencies for custom nodes
-# Add cudnn support
-# Note: current setup adds a huge footprint, a manual install would likely be better
-# FROM nvidia/cuda:12.9.1-cudnn-runtime-ubuntu24.04 AS base
-# FROM end-image
-# COPY --from=base --chown=ubuntu:ubuntu /usr/local/cuda* /usr/local/cuda*
-# COPY --from=base --chown=ubuntu:ubuntu /opt/nvidia /opt/nvidia
-
 # # Add additional OS based packages
 USER root
-RUN --mount=type=cache,target=/var/cache/apt \
-    --mount=type=cache,target=/var/lib/apt/lists \
+RUN apt-get update && \
     apt-get install --no-install-recommends -y \
         ffmpeg \
-        python3-opencv
+        python3-opencv && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Add cudnn support
+RUN curl -O https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/x86_64/cuda-keyring_1.1-1_all.deb && \
+    dpkg -i cuda-keyring_1.1-1_all.deb && \
+    rm cuda-keyring_1.1-1_all.deb && \
+    apt-get update && \
+    apt-get install --no-install-recommends -y cuda-nvcc-12-9  && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # Add additional pip based packages
 USER ubuntu
-RUN --mount=type=cache,target=/home/ubuntu/.cache/pip \
-    pip3 install \
+RUN pip3 --no-cache-dir install \
         gguf \
         sageattention
 
-# Cleanup image
-USER root
-RUN apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-
-USER ubuntu
 EXPOSE 8188
-
 ENTRYPOINT ["python3", "main.py", "--listen"]
